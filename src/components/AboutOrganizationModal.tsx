@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { ORGANIZATION_INFO } from '../data/mockData';
+import React, { useState, useEffect } from 'react';
 import { 
   Building2, 
   MapPin, 
@@ -29,25 +28,50 @@ import {
   Linkedin,
   Twitter,
   FileCheck2,
-  Share2
+  Share2,
+  Scale,
+  FileText
 } from 'lucide-react';
+import { authoritativeOrgService } from '../services/authoritativeOrgService';
+import { 
+  AuthoritativeOrganizationProfile, 
+  CentralImpactData, 
+  FinancialTransparencyData, 
+  VerifiedTeamMember 
+} from '../types';
 
 interface AboutOrganizationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigateDonate?: () => void;
   onNavigateVolunteer?: () => void;
+  onOpenAdminConsole?: () => void;
 }
 
 export const AboutOrganizationModal: React.FC<AboutOrganizationModalProps> = ({
   isOpen,
   onClose,
   onNavigateDonate,
-  onNavigateVolunteer
+  onNavigateVolunteer,
+  onOpenAdminConsole
 }) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<'overview' | 'programs' | 'leadership' | 'statutory'>('overview');
-  const org = ORGANIZATION_INFO;
+  const [activeSection, setActiveSection] = useState<'overview' | 'programs' | 'leadership' | 'transparency' | 'statutory'>('overview');
+  
+  const [profile, setProfile] = useState<AuthoritativeOrganizationProfile>(() => authoritativeOrgService.getProfile());
+  const [impactData, setImpactData] = useState<CentralImpactData>(() => authoritativeOrgService.getImpactData());
+  const [transparency, setTransparency] = useState<FinancialTransparencyData>(() => authoritativeOrgService.getFinancialTransparency());
+  const [approvedTeam, setApprovedTeam] = useState<VerifiedTeamMember[]>(() => authoritativeOrgService.getPublicApprovedTeam());
+
+  useEffect(() => {
+    const unsubscribe = authoritativeOrgService.subscribe(() => {
+      setProfile(authoritativeOrgService.getProfile());
+      setImpactData(authoritativeOrgService.getImpactData());
+      setTransparency(authoritativeOrgService.getFinancialTransparency());
+      setApprovedTeam(authoritativeOrgService.getPublicApprovedTeam());
+    });
+    return unsubscribe;
+  }, []);
 
   if (!isOpen) return null;
 
@@ -57,9 +81,11 @@ export const AboutOrganizationModal: React.FC<AboutOrganizationModalProps> = ({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const metrics = impactData.metrics;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs animate-fadeIn overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col animate-scaleUp">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col animate-scaleUp">
         
         {/* Modal Header */}
         <div className="relative bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 text-white p-5 sm:p-6 flex-shrink-0">
@@ -78,28 +104,29 @@ export const AboutOrganizationModal: React.FC<AboutOrganizationModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-extrabold uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">
-                  Est. {org.foundedYear} • Registered Society
+                  Est. {profile.establishedYear} • Registered Society
                 </span>
                 <span className="text-[10px] font-bold text-amber-200">
-                  Govt. Approved
+                  Verified Authority Record
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-white leading-tight mt-0.5">
-                {org.name}
+                {profile.officialName}
               </h2>
               <p className="text-xs text-orange-100 font-medium">
-                {org.acronymMeaning}
+                {profile.acronymMeaning}
               </p>
             </div>
           </div>
 
-          {/* Quick Sub-Navigation Pills */}
-          <div className="flex items-center gap-1.5 mt-4 overflow-x-auto pb-1 scrollbar-none">
+          {/* Sub-Navigation Tabs */}
+          <div className="flex items-center gap-1.5 mt-4 overflow-x-auto pb-1 no-scrollbar">
             {[
               { id: 'overview', label: 'Overview & Mission', icon: Compass },
-              { id: 'programs', label: 'Our Programs', icon: Target },
-              { id: 'leadership', label: 'Leadership', icon: Users },
-              { id: 'statutory', label: 'Address & Legal', icon: ShieldCheck }
+              { id: 'programs', label: 'Programmes & Reach', icon: Target },
+              { id: 'leadership', label: `Verified Team (${approvedTeam.length})`, icon: Users },
+              { id: 'transparency', label: 'Financial Transparency', icon: Scale },
+              { id: 'statutory', label: 'Statutory & Grievance', icon: ShieldCheck }
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeSection === tab.id;
@@ -134,7 +161,7 @@ export const AboutOrganizationModal: React.FC<AboutOrganizationModalProps> = ({
                   <span>Our Mission</span>
                 </div>
                 <p className="text-sm text-gray-900 dark:text-white font-medium leading-relaxed">
-                  "{org.mission}"
+                  "{profile.mission}"
                 </p>
               </div>
 
@@ -145,163 +172,215 @@ export const AboutOrganizationModal: React.FC<AboutOrganizationModalProps> = ({
                   <span>Our Vision</span>
                 </div>
                 <p className="text-sm text-gray-900 dark:text-white font-medium leading-relaxed">
-                  "{org.vision}"
+                  "{profile.vision}"
                 </p>
               </div>
 
-              {/* Key Impact Metrics Grid */}
+              {/* Verified Impact Metrics Grid from Authoritative Source */}
               <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500">
-                  Verified Impact At A Glance
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                    Authoritative Impact Indicators ({impactData.reportingYear})
+                  </h3>
+                  <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Audited Data
+                  </span>
+                </div>
+
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-center">
-                    <p className="text-lg font-black text-orange-600 dark:text-orange-400">{org.impactMetrics.livesTouched}</p>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase">Lives Touched</p>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-center">
-                    <p className="text-lg font-black text-blue-600 dark:text-blue-400">{org.impactMetrics.childrenEducated}</p>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase">Children (AABHA)</p>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-center">
-                    <p className="text-lg font-black text-amber-600 dark:text-amber-400">{org.impactMetrics.mealsServed}</p>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase">Meals Served</p>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-center">
-                    <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{org.impactMetrics.medicalCamps}</p>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase">Free Health Camps</p>
-                  </div>
+                  {metrics.totalBeneficiaries.value !== null && (
+                    <div className="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-center">
+                      <p className="text-lg font-black text-orange-600 dark:text-orange-400 font-mono">
+                        {metrics.totalBeneficiaries.value.toLocaleString('en-IN')}{metrics.totalBeneficiaries.displaySuffix}
+                      </p>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase">Lives Empowered</p>
+                    </div>
+                  )}
+
+                  {metrics.childrenSupported.value !== null && (
+                    <div className="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-center">
+                      <p className="text-lg font-black text-blue-600 dark:text-blue-400 font-mono">
+                        {metrics.childrenSupported.value.toLocaleString('en-IN')}{metrics.childrenSupported.displaySuffix}
+                      </p>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase">Children (AABHA)</p>
+                    </div>
+                  )}
+
+                  {metrics.mealsServed.value !== null && (
+                    <div className="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-center">
+                      <p className="text-lg font-black text-amber-600 dark:text-amber-400 font-mono">
+                        {metrics.mealsServed.value.toLocaleString('en-IN')}{metrics.mealsServed.displaySuffix}
+                      </p>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase">Meals Distributed</p>
+                    </div>
+                  )}
+
+                  {metrics.healthCamps.value !== null && (
+                    <div className="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-center">
+                      <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                        {metrics.healthCamps.value.toLocaleString('en-IN')}{metrics.healthCamps.displaySuffix}
+                      </p>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase">Free Health Camps</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Core Values */}
-              <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500">
-                  Guiding Principles & Core Values
-                </h3>
-                <div className="space-y-1.5">
-                  {org.coreValues.map((val, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                      <span>{val}</span>
-                    </div>
-                  ))}
-                </div>
+              {/* Description */}
+              <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-2xl border border-gray-200 dark:border-zinc-700 space-y-1.5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-zinc-300">
+                  About the Society
+                </h4>
+                <p className="text-xs leading-relaxed text-gray-600 dark:text-zinc-300">
+                  {profile.description}
+                </p>
               </div>
 
               {/* Official Social Links Banner */}
               <div className="bg-gray-900 text-white p-4 rounded-2xl space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-orange-400">
-                    Connect On Official Social Channels
+                    Verified Social Channels
                   </span>
                   <a 
-                    href={org.website} 
+                    href="https://helpsngo.in/" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-[10px] text-zinc-300 hover:text-white flex items-center gap-1 font-bold underline"
+                    className="text-xs font-mono font-bold text-orange-400 hover:underline flex items-center gap-1"
                   >
                     <span>helpsngo.in</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <a
-                    href={org.socialLinks.facebook}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-200 text-xs font-bold transition-all"
-                  >
-                    <Facebook className="w-3.5 h-3.5" />
-                    <span>Facebook</span>
-                  </a>
-                  <a
-                    href={org.socialLinks.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-pink-600/30 hover:bg-pink-600/50 border border-pink-500/40 text-pink-200 text-xs font-bold transition-all"
-                  >
-                    <Instagram className="w-3.5 h-3.5" />
-                    <span>Instagram</span>
-                  </a>
-                  <a
-                    href={org.socialLinks.youtube}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600/30 hover:bg-red-600/50 border border-red-500/40 text-red-200 text-xs font-bold transition-all"
-                  >
-                    <Youtube className="w-3.5 h-3.5" />
-                    <span>YouTube (@helpsngo_in)</span>
-                  </a>
-                  <a
-                    href={org.socialLinks.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-200 text-xs font-bold transition-all"
-                  >
-                    <Linkedin className="w-3.5 h-3.5" />
-                    <span>LinkedIn</span>
-                  </a>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {profile.officialSocialLinks.facebook && (
+                    <a
+                      href={profile.officialSocialLinks.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors"
+                    >
+                      <Facebook className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Facebook</span>
+                    </a>
+                  )}
+                  {profile.officialSocialLinks.instagram && (
+                    <a
+                      href={profile.officialSocialLinks.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors"
+                    >
+                      <Instagram className="w-3.5 h-3.5 text-pink-400" />
+                      <span>Instagram</span>
+                    </a>
+                  )}
+                  {profile.officialSocialLinks.youtube && (
+                    <a
+                      href={profile.officialSocialLinks.youtube}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors"
+                    >
+                      <Youtube className="w-3.5 h-3.5 text-rose-500" />
+                      <span>YouTube</span>
+                    </a>
+                  )}
+                  {profile.officialSocialLinks.linkedin && (
+                    <a
+                      href={profile.officialSocialLinks.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors"
+                    >
+                      <Linkedin className="w-3.5 h-3.5 text-blue-500" />
+                      <span>LinkedIn</span>
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
-          {/* SECTION 2: PROGRAMS */}
+          {/* SECTION 2: PROGRAMMES & REACH */}
           {activeSection === 'programs' && (
-            <div className="space-y-3.5 animate-fadeIn">
-              <p className="text-xs text-gray-500">
-                HELPS Welfare Society operates 6 major sustained programs addressing grassroots education, healthcare, and livelihood needs across India:
-              </p>
+            <div className="space-y-4 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                  Verified achievements categorized by programme and field location:
+                </p>
+                <span className="text-[10px] text-gray-400 font-mono">
+                  Audit Signoff: {impactData.auditorSignoff}
+                </span>
+              </div>
 
               <div className="space-y-3">
-                {org.programs.map((prog) => (
-                  <div 
+                {impactData.programmeAchievements.map((prog) => (
+                  <div
                     key={prog.id}
-                    className="p-3.5 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 space-y-2 hover:border-orange-300 dark:hover:border-orange-700 transition-all"
+                    className="p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/60 shadow-xs space-y-2 hover:border-orange-300 transition-colors"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold">
-                          {prog.category === 'Education' ? <GraduationCap className="w-4 h-4" /> :
-                           prog.category === 'Healthcare' ? <HeartPulse className="w-4 h-4" /> :
-                           prog.category === 'Environment' ? <Droplets className="w-4 h-4" /> :
-                           prog.category === 'Hunger' ? <Utensils className="w-4 h-4" /> :
-                           <Sparkles className="w-4 h-4" />}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-950 px-2 py-0.5 rounded-md">
+                            {prog.category}
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-mono">
+                            {prog.reportingPeriod}
+                          </span>
                         </div>
-                        <div>
-                          <h4 className="font-bold text-sm text-gray-900 dark:text-white">{prog.name}</h4>
-                          <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold uppercase">{prog.category}</span>
-                        </div>
+                        <h4 className="font-extrabold text-sm text-gray-900 dark:text-white mt-1">
+                          {prog.programmeName}
+                        </h4>
                       </div>
-                      <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold px-2 py-0.5 rounded-full">
-                        {prog.impactHighlight}
+
+                      <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Verified
                       </span>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
-                      {prog.description}
+
+                    <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                      {prog.achievementHeadline}
                     </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1 border-t border-gray-100 dark:border-gray-700">
+                      <div className="text-gray-500">
+                        Location: <strong className="text-gray-800 dark:text-zinc-200">{prog.verifiedLocation}</strong>
+                      </div>
+                      <div className="text-gray-500 sm:text-right">
+                        Lead: <strong className="text-gray-800 dark:text-zinc-200">{prog.leadCoordinator}</strong>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* SECTION 3: LEADERSHIP */}
+          {/* SECTION 3: VERIFIED TEAM ROSTER (ONLY APPROVED MEMBERS) */}
           {activeSection === 'leadership' && (
             <div className="space-y-3.5 animate-fadeIn">
-              <p className="text-xs text-gray-500">
-                Governed by dedicated social workers, medical professionals, educators, and university mentors:
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                  Approved trustees, physicians, educators, and field operations managers:
+                </p>
+                <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                  Approved Records Only
+                </span>
+              </div>
 
               <div className="space-y-3">
-                {org.leadership.map((leader) => (
+                {approvedTeam.map((leader) => (
                   <div
                     key={leader.id}
                     className="p-3.5 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/60 flex items-start gap-3 shadow-xs"
                   >
                     <img
-                      src={leader.avatar}
+                      src={leader.photographUrl}
                       alt={leader.name}
                       className="w-12 h-12 rounded-2xl object-cover border border-gray-200 dark:border-gray-700 flex-shrink-0"
                       referrerPolicy="no-referrer"
@@ -317,10 +396,10 @@ export const AboutOrganizationModal: React.FC<AboutOrganizationModalProps> = ({
                         </span>
                       </div>
                       <p className="text-xs font-bold text-orange-600 dark:text-orange-400">
-                        {leader.role}
+                        {leader.designation}
                       </p>
                       <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-normal">
-                        {leader.bio}
+                        {leader.biography}
                       </p>
                       {leader.email && (
                         <div className="pt-1 flex items-center gap-3 text-[11px]">
@@ -337,156 +416,212 @@ export const AboutOrganizationModal: React.FC<AboutOrganizationModalProps> = ({
             </div>
           )}
 
-          {/* SECTION 4: ADDRESS, CONTACT & STATUTORY REGISTRATION */}
+          {/* SECTION 4: FINANCIAL TRANSPARENCY & AUDITED STATEMENTS */}
+          {activeSection === 'transparency' && (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="p-4 bg-emerald-50/60 dark:bg-zinc-800/60 rounded-2xl border border-emerald-100 dark:border-zinc-700 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-extrabold text-emerald-950 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Scale className="w-4 h-4 text-emerald-600" />
+                    Statutory Programmatic Utilization ({transparency.expenditureRatios.reportingYear})
+                  </h4>
+                  <span className="text-[10px] text-gray-500 font-mono">
+                    Auditor: {transparency.expenditureRatios.auditedBy}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-emerald-200">
+                    <span className="text-lg font-black text-emerald-600 font-mono">
+                      {transparency.expenditureRatios.programmePercentage}%
+                    </span>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">Direct Field Aid</p>
+                  </div>
+                  <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-amber-200">
+                    <span className="text-lg font-black text-amber-600 font-mono">
+                      {transparency.expenditureRatios.administrativePercentage}%
+                    </span>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">Field Logistics</p>
+                  </div>
+                  <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-blue-200">
+                    <span className="text-lg font-black text-blue-600 font-mono">
+                      {transparency.expenditureRatios.fundraisingPercentage}%
+                    </span>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">Audits & Compliance</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Annual Audited Reports */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                  Audited Accounts by Financial Year
+                </h4>
+                <div className="space-y-2">
+                  {transparency.annualReports.map((ar) => (
+                    <div key={ar.id} className="p-3 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-200 dark:border-zinc-700 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-extrabold text-gray-900 dark:text-white block">
+                          {ar.financialYear}: {ar.title}
+                        </span>
+                        <span className="text-[10px] text-gray-500 font-mono">
+                          Receipts: ₹{ar.totalReceiptsINR.toLocaleString('en-IN')} • Opinion: {ar.auditOpinion}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-600 uppercase bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                        Audited
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-[11px] text-gray-500 dark:text-zinc-400 leading-relaxed border-t border-gray-100 dark:border-zinc-800 pt-2">
+                {transparency.statutoryNotice}
+              </p>
+            </div>
+          )}
+
+          {/* SECTION 5: STATUTORY REGISTRATION & GRIEVANCE */}
           {activeSection === 'statutory' && (
             <div className="space-y-4 animate-fadeIn">
-              {/* Statutory & Legal Registration Details */}
+              {/* Statutory Registrations List */}
               <div className="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center gap-2 text-gray-900 dark:text-white font-bold text-xs uppercase tracking-wider">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Statutory Registration & Tax Status</span>
+                  <span>Verified Legal Registrations</span>
                 </div>
 
                 <div className="space-y-2 text-xs">
-                  <div className="flex items-start justify-between gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                    <span className="text-gray-500">Official Legal Entity:</span>
-                    <span className="font-bold text-right text-gray-900 dark:text-white">{org.legalName}</span>
-                  </div>
-                  <div className="flex items-start justify-between gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                    <span className="text-gray-500">Governing Act:</span>
-                    <span className="font-bold text-right text-gray-900 dark:text-white">{org.governingAct}</span>
-                  </div>
-                  <div className="flex items-start justify-between gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                    <span className="text-gray-500">Registration Details:</span>
-                    <span className="font-bold text-right text-emerald-700 dark:text-emerald-400">{org.registrationNumber}</span>
-                  </div>
-                  <div className="flex items-start justify-between gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                    <span className="text-gray-500">Tax Exemption:</span>
-                    <span className="font-bold text-right text-orange-700 dark:text-orange-400">{org.taxStatus}</span>
-                  </div>
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-gray-500">Established / Founded:</span>
-                    <span className="font-bold text-right text-gray-900 dark:text-white">{org.foundedYear} (Over 8+ Years of Service)</span>
-                  </div>
+                  {profile.verifiedRegistrations.map((reg) => (
+                    <div key={reg.id} className="pb-2 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-2">
+                      <div>
+                        <span className="font-bold text-gray-900 dark:text-white block">{reg.title}</span>
+                        <span className="text-[10px] text-gray-500">{reg.governingAct}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 block">{reg.registrationNumber}</span>
+                        <span className="text-[9px] text-gray-400 font-mono">Authority: {reg.issuingAuthority}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Official Address */}
-              <div className="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-gray-900 dark:text-white font-bold text-xs uppercase tracking-wider">
-                    <MapPin className="w-4 h-4 text-orange-600" />
-                    <span>Official Headquarters Address</span>
-                  </div>
-                  <button
-                    onClick={() => handleCopy(org.address.fullFormatted, 'address')}
-                    className="text-[10px] text-orange-600 dark:text-orange-400 font-bold uppercase hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    {copiedField === 'address' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedField === 'address' ? 'Copied' : 'Copy'}</span>
-                  </button>
+              {/* Tax Registrations */}
+              <div className="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center gap-2 text-gray-900 dark:text-white font-bold text-xs uppercase tracking-wider">
+                  <FileCheck2 className="w-4 h-4 text-orange-600" />
+                  <span>Tax Registrations & 80G Deductions</span>
                 </div>
-                <p className="text-xs text-gray-800 dark:text-gray-200 leading-relaxed font-medium">
-                  {org.address.fullFormatted}
-                </p>
-                <div className="flex items-center gap-2 pt-1">
-                  <span className="text-[10px] bg-orange-100 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 font-bold px-2 py-0.5 rounded">
-                    Landmark: {org.address.landmark}
-                  </span>
-                  <span className="text-[10px] bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-mono px-2 py-0.5 rounded">
-                    PIN: {org.address.pinCode}
-                  </span>
+
+                <div className="space-y-2 text-xs">
+                  {profile.taxRegistrations.map((tax) => (
+                    <div key={tax.id} className="pb-2 border-b border-gray-200 dark:border-gray-700 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-gray-900 dark:text-white">{tax.taxSection}</span>
+                        <span className="font-mono font-bold text-orange-700 dark:text-orange-400">{tax.orderNumber}</span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 dark:text-zinc-400">
+                        {tax.publicDisclaimer}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Official Phone & Email Directory */}
+              {/* Registered vs Operational Addresses */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Registered Address */}
                 <div className="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-gray-900 dark:text-white font-bold text-xs uppercase tracking-wider">
-                    <Phone className="w-4 h-4 text-blue-600" />
-                    <span>Official Helpline</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                      Registered Address (Statutory)
+                    </span>
+                    <button
+                      onClick={() => handleCopy(profile.registeredAddress.formatted, 'reg_address')}
+                      className="text-[10px] text-orange-600 font-bold uppercase hover:underline cursor-pointer"
+                    >
+                      {copiedField === 'reg_address' ? 'Copied' : 'Copy'}
+                    </button>
                   </div>
-                  <div className="space-y-1 text-xs">
-                    <p>
-                      <a href={`tel:${org.phone.primary}`} className="font-mono font-bold text-blue-600 dark:text-blue-400 hover:underline">
-                        {org.phone.primary} (Primary)
-                      </a>
-                    </p>
-                    <p>
-                      <a href={`tel:${org.phone.secondary}`} className="font-mono text-gray-600 dark:text-gray-300 hover:underline">
-                        {org.phone.secondary}
-                      </a>
-                    </p>
-                    <p>
-                      <a href={`tel:${org.phone.helpline}`} className="font-mono text-gray-600 dark:text-gray-300 hover:underline">
-                        {org.phone.helpline}
-                      </a>
-                    </p>
-                  </div>
+                  <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                    {profile.registeredAddress.formatted}
+                  </p>
                 </div>
 
+                {/* Operational Address */}
                 <div className="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-gray-900 dark:text-white font-bold text-xs uppercase tracking-wider">
-                    <Mail className="w-4 h-4 text-emerald-600" />
-                    <span>Official Email</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                      Operational Field Address
+                    </span>
+                    <button
+                      onClick={() => handleCopy(profile.operationalAddress.formatted, 'ops_address')}
+                      className="text-[10px] text-orange-600 font-bold uppercase hover:underline cursor-pointer"
+                    >
+                      {copiedField === 'ops_address' ? 'Copied' : 'Copy'}
+                    </button>
                   </div>
-                  <div className="space-y-1 text-xs">
-                    <p>
-                      <a href={`mailto:${org.email.primary}`} className="font-mono font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
-                        {org.email.primary}
-                      </a>
-                    </p>
-                    <p>
-                      <a href={`mailto:${org.email.general}`} className="font-mono text-gray-600 dark:text-gray-300 hover:underline">
-                        {org.email.general}
-                      </a>
-                    </p>
-                    <p>
-                      <a href={org.website} target="_blank" rel="noopener noreferrer" className="font-mono text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1">
-                        <Globe className="w-3 h-3" />
-                        <span>{org.website}</span>
-                      </a>
-                    </p>
+                  <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                    {profile.operationalAddress.formatted}
+                  </p>
+                </div>
+              </div>
+
+              {/* Contact & Grievance Officer */}
+              <div className="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 space-y-2">
+                <span className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider block">
+                  Designated Grievance & Redressal Desk
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="text-gray-500 block text-[10px]">Nodal Officer:</span>
+                    <span className="font-bold text-gray-900 dark:text-white">{profile.grievanceDetails.nodalOfficerName}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block text-[10px]">Email:</span>
+                    <a href={`mailto:${profile.grievanceDetails.email}`} className="font-mono text-emerald-600 hover:underline">
+                      {profile.grievanceDetails.email}
+                    </a>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block text-[10px]">Turnaround:</span>
+                    <span className="font-semibold text-gray-800 dark:text-zinc-200">Within {profile.grievanceDetails.turnaroundDays} business days</span>
                   </div>
                 </div>
               </div>
             </div>
           )}
-
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="p-4 bg-gray-50 dark:bg-gray-800/80 border-t border-gray-200 dark:border-gray-800 flex flex-wrap items-center justify-between gap-2.5 flex-shrink-0">
-          <div className="text-[11px] text-gray-500 font-medium">
-            Official Data Source: <a href="https://helpsngo.in/" target="_blank" rel="noopener noreferrer" className="text-orange-600 font-bold hover:underline">helpsngo.in</a>
+        <div className="p-4 bg-gray-50 dark:bg-gray-900/80 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 text-[11px] text-gray-500">
+            <span className="font-mono">Last Verified: {profile.lastUpdatedDate}</span>
           </div>
 
           <div className="flex items-center gap-2">
-            {onNavigateVolunteer && (
-              <button
-                onClick={() => {
-                  onClose();
-                  onNavigateVolunteer();
-                }}
-                className="px-3.5 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-800 dark:text-gray-200 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
-              >
-                Join As Volunteer
-              </button>
-            )}
             {onNavigateDonate && (
               <button
-                onClick={() => {
-                  onClose();
-                  onNavigateDonate();
-                }}
-                className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-extrabold uppercase tracking-wider shadow-xs active:scale-95 transition-all cursor-pointer"
+                type="button"
+                onClick={onNavigateDonate}
+                className="bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs uppercase px-4 py-2 rounded-xl transition-all cursor-pointer shadow-xs"
               >
-                Support Our Mission (₹)
+                Donate ₹ INR
+              </button>
+            )}
+            {onNavigateVolunteer && (
+              <button
+                type="button"
+                onClick={onNavigateVolunteer}
+                className="bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 text-gray-800 dark:text-zinc-200 font-bold text-xs uppercase px-3 py-2 rounded-xl transition-all cursor-pointer"
+              >
+                Volunteer
               </button>
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

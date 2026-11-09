@@ -32,34 +32,33 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-[#F1F3F5] dark:bg-gray-950 flex flex-col items-center justify-start transition-colors duration-200 font-sans text-gray-900 dark:text-gray-100 w-full">
-      {/* Top Device Viewport Status & Auto-Detection Bar */}
+      {/* WCAG 2.2 Skip to Main Content Link */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-orange-600 focus:text-white focus:rounded-xl focus:font-bold focus:shadow-xl focus:outline-none focus:ring-2 focus:ring-white"
+      >
+        Skip to main content
+      </a>
+
+      {/* Top Device Viewport Status Bar (Clean & Accessible) */}
       <header
         aria-label="Responsive Device Viewport Bar"
-        className="w-full max-w-5xl mt-2 sm:mt-3 mb-2 px-3 sm:px-4 py-1.5 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-2xl sm:rounded-full border border-gray-200 dark:border-gray-800 shadow-xs flex flex-wrap items-center justify-between gap-2 text-xs transition-colors"
+        className="w-full max-w-7xl mt-1.5 sm:mt-2.5 mb-1.5 px-3 sm:px-6 py-1.5 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-2xl sm:rounded-full border border-gray-200/80 dark:border-gray-800 shadow-2xs flex flex-wrap items-center justify-between gap-2 text-xs transition-colors"
       >
-        {/* App Title & Dynamic Screen Detection Badge */}
+        {/* App Title & Verification Badge */}
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 bg-orange-600 rounded-full flex items-center justify-center text-white font-black text-[10px] shadow-xs">
             H
           </div>
           <span className="font-extrabold tracking-tight text-gray-900 dark:text-white uppercase text-xs">
-            Helps NGO
+            HELPS Welfare Society
           </span>
-          <div className="flex items-center gap-1 text-[10px] bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 font-semibold px-2.5 py-0.5 rounded-full border border-orange-200 dark:border-orange-800/60">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>
-              {deviceMode === 'auto' ? (
-                <>
-                  <span className="font-bold text-orange-600 dark:text-orange-400">Auto:</span>{' '}
-                  {detectedDevice === 'mobile' ? 'Android / Mobile' : detectedDevice === 'tablet' ? 'Tablet' : 'Desktop'} ({viewportWidth}px)
-                </>
-              ) : (
-                <>
-                  <span className="font-bold">Manual:</span> {deviceMode.toUpperCase()}
-                </>
-              )}
-            </span>
-          </div>
+          <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium hidden sm:inline">
+            ·
+          </span>
+          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold uppercase tracking-wider hidden sm:inline">
+            80G Exempt (CIT(E) CHD) · Societies Act 1860 (Est. 2016)
+          </span>
         </div>
 
         {/* Viewport Mode Controls (Auto by default, with one-click preview options) */}
@@ -130,14 +129,14 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ children }) => {
       <div
         className={`w-full transition-all duration-300 flex flex-col flex-1 ${
           effectiveMode === 'mobile'
-            ? 'max-w-md mx-auto bg-white dark:bg-gray-950 sm:rounded-[2rem] sm:shadow-lg sm:border sm:border-gray-200 sm:dark:border-gray-800 overflow-hidden relative min-h-screen'
+            ? 'max-w-md mx-auto bg-white dark:bg-gray-950 sm:rounded-3xl sm:shadow-md sm:border sm:border-gray-200 sm:dark:border-gray-800 overflow-hidden relative min-h-screen'
             : effectiveMode === 'tablet'
-            ? 'max-w-3xl mx-auto bg-white dark:bg-gray-950 sm:rounded-[2rem] sm:shadow-lg sm:border sm:border-gray-200 sm:dark:border-gray-800 overflow-hidden relative min-h-screen'
-            : 'max-w-5xl mx-auto bg-white dark:bg-gray-950 sm:rounded-[2rem] sm:shadow-lg sm:border sm:border-gray-200 sm:dark:border-gray-800 overflow-hidden relative min-h-screen'
+            ? 'max-w-3xl mx-auto bg-white dark:bg-gray-950 sm:rounded-3xl sm:shadow-md sm:border sm:border-gray-200 sm:dark:border-gray-800 overflow-hidden relative min-h-screen'
+            : 'max-w-7xl mx-auto bg-white dark:bg-gray-950 sm:rounded-3xl sm:shadow-sm sm:border sm:border-gray-200 sm:dark:border-gray-800 overflow-hidden relative min-h-screen'
         }`}
       >
         {/* Main Content Area */}
-        <main className="w-full bg-[#F8F9FA] dark:bg-gray-950 flex-1 flex flex-col relative transition-colors">
+        <main id="main-content" className="w-full bg-[#FAFAF8] dark:bg-gray-950 flex-1 flex flex-col relative transition-colors">
           {children}
         </main>
       </div>

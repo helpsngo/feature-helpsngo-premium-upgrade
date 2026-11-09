@@ -16,7 +16,8 @@ import {
   Activity,
   Droplets
 } from 'lucide-react';
-import { DonationRecord, TabType } from '../types';
+import { DonationRecord, TabType, CentralImpactData } from '../types';
+import { authoritativeOrgService } from '../services/authoritativeOrgService';
 
 interface GlobalImpactCounterProps {
   donations?: DonationRecord[];
@@ -31,16 +32,25 @@ export const GlobalImpactCounter: React.FC<GlobalImpactCounterProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<'cumulative' | 'direct_ledger'>('cumulative');
   const [showFormulaModal, setShowFormulaModal] = useState<boolean>(false);
+  const [centralImpact, setCentralImpact] = useState<CentralImpactData>(() => authoritativeOrgService.getImpactData());
 
-  // Compute live metrics strictly based on donation records
+  React.useEffect(() => {
+    const unsub = authoritativeOrgService.subscribe(() => {
+      setCentralImpact(authoritativeOrgService.getImpactData());
+    });
+    return unsub;
+  }, []);
+
+  // Compute live metrics based on valid donation records with authoritative baseline preservation
   const impactStats = useMemo(() => {
-    const completed = donations.filter(d => d.status === 'Completed' || !d.status);
+    // Include completed, processing or recorded donations with positive amounts
+    const activeRecords = donations.filter(d => (Number(d.amount) || 0) > 0);
 
-    const totalFunds = completed.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
-    const donationCount = completed.length;
+    const totalFunds = activeRecords.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+    const donationCount = activeRecords.length;
 
     // Categorized breakdown
-    const hungerFunds = completed
+    const hungerFunds = activeRecords
       .filter(d => {
         const cat = (d.category || '').toLowerCase();
         const title = (d.title || '').toLowerCase();
@@ -48,7 +58,7 @@ export const GlobalImpactCounter: React.FC<GlobalImpactCounterProps> = ({
       })
       .reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
 
-    const educationFunds = completed
+    const educationFunds = activeRecords
       .filter(d => {
         const cat = (d.category || '').toLowerCase();
         const title = (d.title || '').toLowerCase();
@@ -56,7 +66,7 @@ export const GlobalImpactCounter: React.FC<GlobalImpactCounterProps> = ({
       })
       .reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
 
-    const healthFunds = completed
+    const healthFunds = activeRecords
       .filter(d => {
         const cat = (d.category || '').toLowerCase();
         const title = (d.title || '').toLowerCase();
@@ -64,7 +74,7 @@ export const GlobalImpactCounter: React.FC<GlobalImpactCounterProps> = ({
       })
       .reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
 
-    const waterFunds = completed
+    const waterFunds = activeRecords
       .filter(d => {
         const cat = (d.category || '').toLowerCase();
         const title = (d.title || '').toLowerCase();
@@ -91,14 +101,15 @@ export const GlobalImpactCounter: React.FC<GlobalImpactCounterProps> = ({
     // - Every ₹200 sponsors diagnostic screening & medicine for 1 patient
     const directPatients = Math.round(effectiveHealthFunds / 200);
 
-    // Baseline historical figures (from NGO audited records since 2016)
-    const baseMeals = 500000;
-    const baseLives = 100000;
-    const baseStudents = 50000;
-    const basePatients = 15000;
+    // Baseline historical figures dynamically loaded from Central Impact System (FY 2024-2025 Audited)
+    const baseMeals = centralImpact.metrics.mealsServed?.value ?? 500000;
+    const baseLives = centralImpact.metrics.totalBeneficiaries?.value ?? 100000;
+    const baseStudents = centralImpact.metrics.childrenSupported?.value ?? 50000;
+    const healthAch = centralImpact.programmeAchievements.find(p => p.category === 'Healthcare');
+    const basePatients = healthAch?.beneficiaryCount ?? 15000;
 
     // Latest recorded donation
-    const latestDonation = completed.length > 0 ? completed[0] : null;
+    const latestDonation = activeRecords.length > 0 ? activeRecords[0] : null;
 
     return {
       totalFunds,
@@ -107,13 +118,19 @@ export const GlobalImpactCounter: React.FC<GlobalImpactCounterProps> = ({
       directLives,
       directStudents,
       directPatients,
+      baseMeals,
+      baseLives,
+      baseStudents,
+      basePatients,
       cumulativeMeals: baseMeals + directMeals,
       cumulativeLives: baseLives + directLives,
       cumulativeStudents: baseStudents + directStudents,
       cumulativePatients: basePatients + directPatients,
-      latestDonation
+      latestDonation,
+      reportingYear: centralImpact.reportingYear,
+      verificationStatus: centralImpact.dataVerificationStatus
     };
-  }, [donations]);
+  }, [donations, centralImpact]);
 
   const isCumulative = viewMode === 'cumulative';
 
@@ -242,13 +259,15 @@ export const GlobalImpactCounter: React.FC<GlobalImpactCounterProps> = ({
             <div className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono">
               {isCumulative 
                 ? `${impactStats.cumulativeLives.toLocaleString('en-IN')}+` 
-                : impactStats.directLives.toLocaleString('en-IN')}
+                : (impactStats.directLives > 0 ? impactStats.directLives.toLocaleString('en-IN') : '0 (Active)')}
             </div>
             <p className="text-[11px] font-bold text-zinc-300 uppercase tracking-tight mt-0.5">
               Lives Empowered
             </p>
             <p className="text-[9px] text-zinc-400 mt-0.5 truncate">
-              {isCumulative ? `+${impactStats.directLives} from recent ledger` : 'Directly from active gifts'}
+              {isCumulative 
+                ? `Includes ${impactStats.baseLives.toLocaleString('en-IN')}+ audited base` 
+                : (impactStats.directLives > 0 ? 'Directly from active gifts' : `Audited baseline: ${impactStats.baseLives.toLocaleString('en-IN')}+`)}
             </p>
           </div>
         </div>
@@ -267,13 +286,15 @@ export const GlobalImpactCounter: React.FC<GlobalImpactCounterProps> = ({
             <div className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono">
               {isCumulative 
                 ? `${impactStats.cumulativeMeals.toLocaleString('en-IN')}+` 
-                : impactStats.directMeals.toLocaleString('en-IN')}
+                : (impactStats.directMeals > 0 ? impactStats.directMeals.toLocaleString('en-IN') : '0 (Active)')}
             </div>
             <p className="text-[11px] font-bold text-zinc-300 uppercase tracking-tight mt-0.5">
               Meals Distributed
             </p>
             <p className="text-[9px] text-zinc-400 mt-0.5 truncate">
-              {isCumulative ? `+${impactStats.directMeals} fresh meals funded` : 'Annapoorna food relief'}
+              {isCumulative 
+                ? `Includes ${impactStats.baseMeals.toLocaleString('en-IN')}+ audited base` 
+                : (impactStats.directMeals > 0 ? 'Annapoorna food relief' : `Audited baseline: ${impactStats.baseMeals.toLocaleString('en-IN')}+`)}
             </p>
           </div>
         </div>
@@ -292,13 +313,15 @@ export const GlobalImpactCounter: React.FC<GlobalImpactCounterProps> = ({
             <div className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono">
               {isCumulative 
                 ? `${impactStats.cumulativeStudents.toLocaleString('en-IN')}+` 
-                : impactStats.directStudents.toLocaleString('en-IN')}
+                : (impactStats.directStudents > 0 ? impactStats.directStudents.toLocaleString('en-IN') : '0 (Active)')}
             </div>
             <p className="text-[11px] font-bold text-zinc-300 uppercase tracking-tight mt-0.5">
               Children Educated
             </p>
             <p className="text-[9px] text-zinc-400 mt-0.5 truncate">
-              {isCumulative ? `+${impactStats.directStudents} kits & tutorial sets` : 'AABHA learning centers'}
+              {isCumulative 
+                ? `Includes ${impactStats.baseStudents.toLocaleString('en-IN')}+ audited base` 
+                : (impactStats.directStudents > 0 ? 'AABHA learning centers' : `Audited baseline: ${impactStats.baseStudents.toLocaleString('en-IN')}+`)}
             </p>
           </div>
         </div>
@@ -317,13 +340,15 @@ export const GlobalImpactCounter: React.FC<GlobalImpactCounterProps> = ({
             <div className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono">
               {isCumulative 
                 ? `${impactStats.cumulativePatients.toLocaleString('en-IN')}+` 
-                : impactStats.directPatients.toLocaleString('en-IN')}
+                : (impactStats.directPatients > 0 ? impactStats.directPatients.toLocaleString('en-IN') : '0 (Active)')}
             </div>
             <p className="text-[11px] font-bold text-zinc-300 uppercase tracking-tight mt-0.5">
               Medical Aid Given
             </p>
             <p className="text-[9px] text-zinc-400 mt-0.5 truncate">
-              {isCumulative ? `+${impactStats.directPatients} free diagnostics` : 'Physician health camps'}
+              {isCumulative 
+                ? `Includes ${impactStats.basePatients.toLocaleString('en-IN')}+ audited base` 
+                : (impactStats.directPatients > 0 ? 'Physician health camps' : `Audited baseline: ${impactStats.basePatients.toLocaleString('en-IN')}+`)}
             </p>
           </div>
         </div>

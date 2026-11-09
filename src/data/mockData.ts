@@ -928,9 +928,11 @@ export const ORGANIZATION_INFO: OrganizationInfo = {
     helpline: '+91 98030 54088'
   },
   email: {
-    primary: 'helpsngoteam@gmail.com',
+    primary: 'info@helpsngo.in',
     general: 'info@helpsngo.in',
-    support: 'amar@helpsngo.in'
+    support: 'amar@helpsngo.in',
+    compliance: 'compliance@helpsngo.in',
+    donations: 'donations@helpsngo.in'
   },
   website: 'https://helpsngo.in/',
   mission: 'To serve humanity with compassion, creating positive and sustainable change through holistic welfare programs in child education, healthcare assistance, environmental protection, women skill empowerment, and social justice across Punjab and all of India.',

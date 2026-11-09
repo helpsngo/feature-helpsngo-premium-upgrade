@@ -22,13 +22,26 @@ import {
   INITIAL_WORK_ASSIGNMENTS
 } from './data/mockData';
 import { DeviceFrame } from './components/DeviceFrame';
-import { Header } from './components/Header';
-import { TopNav } from './components/TopNav';
+import { MainNavbar } from './components/MainNavbar';
+import { SiteFooter } from './components/SiteFooter';
 import { HomeScreen } from './components/HomeScreen';
 import { ProjectsScreen } from './components/ProjectsScreen';
 import { DonateScreen } from './components/DonateScreen';
 import { ProfileScreen } from './components/ProfileScreen';
 import { VolunteerScreen } from './components/VolunteerScreen';
+import { AboutPage } from './pages/AboutPage';
+import { MissionVisionPage } from './pages/MissionVisionPage';
+import { OurTeamPage } from './pages/OurTeamPage';
+import { ImpactAchievementsPage } from './pages/ImpactAchievementsPage';
+import { StoriesNewsPage } from './pages/StoriesNewsPage';
+import { InternshipPage } from './pages/InternshipPage';
+import { EventsPage } from './pages/EventsPage';
+import { RequestAssistancePage } from './pages/RequestAssistancePage';
+import { TransparencyReportsPage } from './pages/TransparencyReportsPage';
+import { ContactPage } from './pages/ContactPage';
+import { AJAssistantPage } from './pages/AJAssistantPage';
+import { ProgramDetailPage } from './pages/ProgramDetailPage';
+import { LegalPolicyPage } from './pages/LegalPolicyPage';
 import { AuthModal } from './components/AuthModal';
 import { AuthProvider } from './context/AuthContext';
 import { authService } from './services/authService';
@@ -56,9 +69,12 @@ const OfflineSyncModal = lazy(() => import('./components/OfflineSyncModal').then
 const ContentApprovalPipelineModal = lazy(() => import('./components/ContentApprovalPipelineModal').then(m => ({ default: m.ContentApprovalPipelineModal })));
 const AdminUserManagementModal = lazy(() => import('./components/AdminUserManagementModal').then(m => ({ default: m.AdminUserManagementModal })));
 const AboutOrganizationModal = lazy(() => import('./components/AboutOrganizationModal').then(m => ({ default: m.AboutOrganizationModal })));
+const AdminAuthoritativeOrgModal = lazy(() => import('./components/AdminAuthoritativeOrgModal').then(m => ({ default: m.AdminAuthoritativeOrgModal })));
 const LegalPoliciesModal = lazy(() => import('./components/LegalPoliciesModal').then(m => ({ default: m.LegalPoliciesModal })));
+import { Bot } from 'lucide-react';
 const DataPrincipalRightsModal = lazy(() => import('./components/DataPrincipalRightsModal').then(m => ({ default: m.DataPrincipalRightsModal })));
 const DataDeletionConfirmModal = lazy(() => import('./components/DataDeletionConfirmModal').then(m => ({ default: m.DataDeletionConfirmModal })));
+const AJChatbotModal = lazy(() => import('./components/AJChatbotModal').then(m => ({ default: m.AJChatbotModal })));
 
 const ModalLoadingFallback = () => (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-fadeIn">
@@ -151,6 +167,7 @@ export default function App() {
   const [isWebhooksModalOpen, setIsWebhooksModalOpen] = useState<boolean>(false);
   const [isOfflineSyncModalOpen, setIsOfflineSyncModalOpen] = useState<boolean>(false);
   const [isAboutOrgOpen, setIsAboutOrgOpen] = useState<boolean>(false);
+  const [isAJChatbotOpen, setIsAJChatbotOpen] = useState<boolean>(false);
 
   // Admin Modals state
   const [isAdminStudioOpen, setIsAdminStudioOpen] = useState<boolean>(false);
@@ -168,6 +185,8 @@ export default function App() {
   const [selectedPolicyId, setSelectedPolicyId] = useState<string>('privacy-policy');
   const [isRightsCenterOpen, setIsRightsCenterOpen] = useState<boolean>(false);
   const [isDeletionConfirmOpen, setIsDeletionConfirmOpen] = useState<boolean>(false);
+  const [isAuthoritativeConsoleOpen, setIsAuthoritativeConsoleOpen] = useState<boolean>(false);
+  const [authoritativeInitialTab, setAuthoritativeInitialTab] = useState<'profile' | 'impact' | 'transparency' | 'team'>('profile');
 
   // Initialize native Capacitor & mobile runtime features (status bar, splash screen, hardware back button)
   useEffect(() => {
@@ -342,6 +361,7 @@ export default function App() {
 
   const handleSelectProject = (project: Project) => {
     setSelectedProjectForDetail(project);
+    handleNavigate('program-detail');
   };
 
   const handleDonateToProject = (project: Project) => {
@@ -583,31 +603,20 @@ export default function App() {
   return (
     <AuthProvider currentUser={user} onUserChange={handleSetUser}>
       <DeviceFrame>
-        {/* Top Header */}
-        <Header
+        {/* Unified Premium Navigation Bar */}
+        <MainNavbar
           currentTab={currentTab}
           onNavigate={handleNavigate}
-          onBack={() => handleNavigate(previousTab || 'home')}
           user={user}
           onOpenAuth={() => setIsAuthOpen(true)}
           onLogout={handleLogout}
+          onOpenAJChat={() => setIsAJChatbotOpen(true)}
+          onOpenAdminStudio={isAdmin ? () => setIsAdminStudioOpen(true) : undefined}
           pendingApprovalsCount={pendingApprovalsCount}
-          onOpenApprovals={() => setIsAdminApprovalsOpen(true)}
-          onOpenWorkAssignments={() => setIsWorkAssignmentModalOpen(true)}
-          pendingTasksCount={pendingTasksCount}
-          onOpenWebhooks={() => setIsWebhooksModalOpen(true)}
-          onOpenOfflineSync={() => setIsOfflineSyncModalOpen(true)}
-        />
-
-        {/* Top Navigation Bar */}
-        <TopNav
-          currentTab={currentTab}
-          onSelectTab={handleNavigate}
-          user={user}
         />
 
         {/* Screen Content */}
-        <div className="flex-1">
+        <main className="flex-1 w-full" id="main-content">
           {currentTab === 'home' && (
             <HomeScreen
               onNavigate={handleNavigate}
@@ -634,6 +643,25 @@ export default function App() {
                 setIsLegalPoliciesOpen(true);
               }}
               onOpenRightsCenter={() => setIsRightsCenterOpen(true)}
+              onOpenAuthoritativeConsole={(tab) => {
+                if (tab) setAuthoritativeInitialTab(tab);
+                setIsAuthoritativeConsoleOpen(true);
+              }}
+            />
+          )}
+
+          {currentTab === 'about' && (
+            <AboutPage onNavigate={handleNavigate} />
+          )}
+
+          {currentTab === 'mission' && (
+            <MissionVisionPage onNavigate={handleNavigate} />
+          )}
+
+          {currentTab === 'team' && (
+            <OurTeamPage 
+              onNavigate={handleNavigate} 
+              onOpenVolunteer={() => handleNavigate('volunteer')} 
             />
           )}
 
@@ -648,6 +676,25 @@ export default function App() {
             />
           )}
 
+          {currentTab === 'program-detail' && (
+            <ProgramDetailPage
+              program={selectedProjectForDetail || projects[0]}
+              onBack={() => handleNavigate('projects')}
+              onDonate={handleDonateToProject}
+              onVolunteer={() => handleNavigate('volunteer')}
+              onRequestAssistance={() => handleNavigate('assistance')}
+              onNavigate={handleNavigate}
+            />
+          )}
+
+          {currentTab === 'impact' && (
+            <ImpactAchievementsPage onNavigate={handleNavigate} />
+          )}
+
+          {currentTab === 'stories' && (
+            <StoriesNewsPage onNavigate={handleNavigate} />
+          )}
+
           {currentTab === 'donate' && (
             <DonateScreen
               selectedProject={selectedProjectForDonation}
@@ -657,6 +704,58 @@ export default function App() {
               defaultEmail={user.role !== 'guest' ? user.email : ''}
               defaultName={user.role !== 'guest' ? user.name : ''}
               onSelectProjectChange={(proj) => setSelectedProjectForDonation(proj)}
+            />
+          )}
+
+          {currentTab === 'volunteer' && (
+            <VolunteerScreen
+              user={user}
+              onSubmitSuccess={handleVolunteerSubmit}
+              onNavigateHome={() => handleNavigate('home')}
+              onOpenCertificate={() => setIsCertificateOpen(true)}
+              onOpenAdminStudio={isAdmin ? () => setIsAdminStudioOpen(true) : undefined}
+              onOpenAuth={() => setIsAuthOpen(true)}
+              onLogHours={handleLogVolunteerHours}
+              workAssignments={workAssignments}
+              onOpenWorkAssignments={() => setIsWorkAssignmentModalOpen(true)}
+              onUpdateAssignment={handleUpdateWorkAssignment}
+            />
+          )}
+
+          {currentTab === 'internship' && (
+            <InternshipPage onNavigate={handleNavigate} />
+          )}
+
+          {currentTab === 'events' && (
+            <EventsPage onNavigate={handleNavigate} />
+          )}
+
+          {currentTab === 'assistance' && (
+            <RequestAssistancePage onNavigate={handleNavigate} />
+          )}
+
+          {currentTab === 'transparency' && (
+            <TransparencyReportsPage 
+              onNavigate={handleNavigate} 
+              onOpenTaxCert={() => setIsTaxCertModalOpen(true)} 
+            />
+          )}
+
+          {currentTab === 'contact' && (
+            <ContactPage 
+              onNavigate={handleNavigate} 
+              onOpenAJChat={() => setIsAJChatbotOpen(true)} 
+            />
+          )}
+
+          {currentTab === 'aj-assistant' && (
+            <AJAssistantPage onNavigate={handleNavigate} />
+          )}
+
+          {(currentTab === 'privacy-policy' || currentTab === 'terms-and-conditions') && (
+            <LegalPolicyPage
+              initialPolicyId={currentTab}
+              onNavigate={handleNavigate}
             />
           )}
 
@@ -687,22 +786,17 @@ export default function App() {
               onOpenDataDeletion={() => setIsDeletionConfirmOpen(true)}
             />
           )}
+        </main>
 
-          {currentTab === 'volunteer' && (
-            <VolunteerScreen
-              user={user}
-              onSubmitSuccess={handleVolunteerSubmit}
-              onNavigateHome={() => handleNavigate('home')}
-              onOpenCertificate={() => setIsCertificateOpen(true)}
-              onOpenAdminStudio={isAdmin ? () => setIsAdminStudioOpen(true) : undefined}
-              onOpenAuth={() => setIsAuthOpen(true)}
-              onLogHours={handleLogVolunteerHours}
-              workAssignments={workAssignments}
-              onOpenWorkAssignments={() => setIsWorkAssignmentModalOpen(true)}
-              onUpdateAssignment={handleUpdateWorkAssignment}
-            />
-          )}
-        </div>
+        {/* Institutional Site Footer */}
+        <SiteFooter
+          onNavigate={handleNavigate}
+          onOpenLegalPolicies={(policyId) => {
+            if (policyId) setSelectedPolicyId(policyId);
+            setIsLegalPoliciesOpen(true);
+          }}
+          onOpenTaxCert={() => setIsTaxCertModalOpen(true)}
+        />
 
       {/* Dynamic Lazy Loaded Modals & Overlay Modules */}
       <Suspense fallback={<ModalLoadingFallback />}>
@@ -878,6 +972,11 @@ export default function App() {
             onClose={() => setIsAdminStatsModalOpen(false)}
             stats={stats}
             onSaveStats={handleSaveStats}
+            onOpenAuthoritativeConsole={() => {
+              setIsAdminStatsModalOpen(false);
+              setAuthoritativeInitialTab('impact');
+              setIsAuthoritativeConsoleOpen(true);
+            }}
           />
         )}
 
@@ -980,6 +1079,19 @@ export default function App() {
               setIsAboutOrgOpen(false);
               handleNavigate('volunteer');
             }}
+            onOpenAdminConsole={isAdmin ? () => {
+              setIsAboutOrgOpen(false);
+              setIsAuthoritativeConsoleOpen(true);
+            } : undefined}
+          />
+        )}
+
+        {/* Central Authoritative Organization, Impact & Financial Transparency Governance Modal (Admin) */}
+        {isAdmin && isAuthoritativeConsoleOpen && (
+          <AdminAuthoritativeOrgModal
+            isOpen={isAuthoritativeConsoleOpen}
+            onClose={() => setIsAuthoritativeConsoleOpen(false)}
+            initialTab={authoritativeInitialTab}
           />
         )}
 
@@ -1020,7 +1132,38 @@ export default function App() {
             }}
           />
         )}
+
+        {/* AJ Verified AI Assistant Modal */}
+        {isAJChatbotOpen && (
+          <AJChatbotModal
+            isOpen={isAJChatbotOpen}
+            onClose={() => setIsAJChatbotOpen(false)}
+            onNavigate={handleNavigate}
+          />
+        )}
       </Suspense>
+
+      {/* Floating AJ AI Guide Trigger */}
+      <aside 
+        aria-label="AI Guide Help Trigger"
+        className="fixed bottom-4 right-4 z-40"
+      >
+        <button
+          id="floating-aj-chat-btn"
+          type="button"
+          onClick={() => setIsAJChatbotOpen(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 hover:from-orange-500 hover:to-amber-500 text-white font-black text-xs px-3.5 py-2.5 rounded-full shadow-lg border border-orange-400/40 cursor-pointer active:scale-95 transition-all group"
+          title="Ask AJ: Verified HELPS NGO AI Guide"
+          aria-label="Open AJ AI Guide"
+        >
+          <div className="relative">
+            <Bot className="w-4 h-4 text-white group-hover:rotate-12 transition-transform" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          </div>
+          <span className="hidden sm:inline tracking-wider uppercase text-[11px]">Ask AJ (AI Guide)</span>
+          <span className="sm:hidden tracking-wider uppercase text-[10px]">Ask AJ</span>
+        </button>
+      </aside>
 
       {/* Statutory DPDP Act 2023 Consent & Privacy Preference Notice Banner */}
       <DpdpConsentBanner

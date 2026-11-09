@@ -58,7 +58,7 @@ export const TaxExemptionModal: React.FC<TaxExemptionModalProps> = ({
                   Form 10BE / Section 80G Certificate
                 </span>
                 <span className="text-[9px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded border border-emerald-500/30">
-                  100% Tax Deductible
+                  50% Statutory Tax Deduction (80G)
                 </span>
               </div>
               <h3 className="text-sm sm:text-base font-black text-white">
@@ -101,10 +101,10 @@ export const TaxExemptionModal: React.FC<TaxExemptionModalProps> = ({
                 HELPS WELFARE SOCIETY (HELPS NGO)
               </h1>
               <p className="text-xs text-gray-600 max-w-xl mx-auto">
-                Registered under Societies Registration Act XXI of 1860 (Est. 2016) • Chandigarh Reg. • NITI Aayog DARPAN: RJ/2021/0299102
+                Registered under Societies Registration Act XXI of 1860 (Reg No: HR/2021/0285458, Est. 2016) • NITI Aayog DARPAN: HR/2021/0285458
               </p>
               <p className="text-[11px] font-mono text-gray-500">
-                80G Unique Reg. No: <strong>AABTH1234F20261</strong> | Validity: Permanent
+                80G Approval Order: <strong>CIT(E) CHD/80G/2016-17/4726</strong> | Society PAN: <strong>AAATH7892R</strong>
               </p>
             </div>
 

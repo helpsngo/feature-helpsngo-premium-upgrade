@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import { OrgStats } from '../types';
-import { X, CheckCircle, BarChart3, ShieldCheck, Sparkles, Building2 } from 'lucide-react';
+import { X, CheckCircle, BarChart3, ShieldCheck, Sparkles, Building2, ExternalLink } from 'lucide-react';
+import { authoritativeOrgService } from '../services/authoritativeOrgService';
 
 interface AdminStatsModalProps {
   isOpen: boolean;
   onClose: () => void;
   stats: OrgStats;
   onSaveStats: (stats: OrgStats) => void;
+  onOpenAuthoritativeConsole?: () => void;
 }
 
 export const AdminStatsModal: React.FC<AdminStatsModalProps> = ({
   isOpen,
   onClose,
   stats,
-  onSaveStats
+  onSaveStats,
+  onOpenAuthoritativeConsole
 }) => {
   const [formData, setFormData] = useState<OrgStats>({ ...stats });
 
@@ -22,6 +25,42 @@ export const AdminStatsModal: React.FC<AdminStatsModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSaveStats(formData);
+
+    // Sync authoritative central impact store
+    try {
+      const numChildren = parseInt(String(formData.childrenEducated).replace(/[^0-9]/g, ''), 10);
+      const numMeals = parseInt(String(formData.mealsServed).replace(/[^0-9]/g, ''), 10);
+      const numVolunteers = parseInt(String(formData.volunteersActive).replace(/[^0-9]/g, ''), 10);
+      const numWells = parseInt(String(formData.waterWellsInstalled).replace(/[^0-9]/g, ''), 10);
+
+      const currentImpact = authoritativeOrgService.getImpactData();
+      const updatedImpact = {
+        ...currentImpact,
+        metrics: {
+          ...currentImpact.metrics,
+          childrenSupported: {
+            ...currentImpact.metrics.childrenSupported,
+            value: !isNaN(numChildren) ? numChildren : currentImpact.metrics.childrenSupported?.value
+          },
+          mealsServed: {
+            ...currentImpact.metrics.mealsServed,
+            value: !isNaN(numMeals) ? numMeals : currentImpact.metrics.mealsServed?.value
+          },
+          volunteers: {
+            ...currentImpact.metrics.volunteers,
+            value: !isNaN(numVolunteers) ? numVolunteers : currentImpact.metrics.volunteers?.value
+          },
+          cleanWaterWells: {
+            ...currentImpact.metrics.cleanWaterWells,
+            value: !isNaN(numWells) ? numWells : currentImpact.metrics.cleanWaterWells?.value
+          }
+        }
+      };
+      authoritativeOrgService.updateImpactData(updatedImpact);
+    } catch {
+      // non-fatal
+    }
+
     onClose();
   };
 
@@ -56,6 +95,27 @@ export const AdminStatsModal: React.FC<AdminStatsModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 flex-1">
+          {onOpenAuthoritativeConsole && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="text-xs text-emerald-950 font-bold">
+                  Looking for statutory profile, program achievements, and audited transparency?
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenAuthoritativeConsole();
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl shrink-0 cursor-pointer shadow-xs"
+              >
+                Open 4-Tab Console
+              </button>
+            </div>
+          )}
+
           {/* Mission Headline & Description */}
           <div className="space-y-3 bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
             <h3 className="text-xs font-extrabold text-orange-950 uppercase tracking-wider flex items-center gap-1.5">

@@ -62,9 +62,9 @@ export const NgoBankAccountQrModal: React.FC<NgoBankAccountQrModalProps> = ({
     micrCode: '141229002',
     branch: 'Civil Lines Branch, Ludhiana, Punjab - 141001',
     upiVpa: 'helpsngo@icici',
-    taxReg80G: 'CIT(E) CHD/12A/2016-17/AABTH1234F',
-    csrRegNumber: 'CSR00012345 (MCA, Govt. of India)',
-    societyReg: 'Societies Registration Act XXI of 1860'
+    taxReg80G: 'CIT(E) CHD/80G/2016-17/4726',
+    csrRegNumber: 'CSR00018492 (MCA, Govt. of India)',
+    societyReg: 'HR/2021/0285458 (Societies Registration Act XXI of 1860)'
   };
 
   const effectiveAmount = customAmount ? parseFloat(customAmount) || 0 : selectedAmount;
@@ -203,8 +203,8 @@ UPI ID: ${bankDetails.upiVpa}
         donorEmail: donorEmail.trim() || 'alex.johnson@example.com',
         donorTaxId: donorPan.trim().toUpperCase() || 'ABCDE1234F',
         taxDeductible: true,
-        status: 'Completed',
-        approvalStatus: 'approved'
+        status: 'Pending',
+        approvalStatus: 'pending'
       });
     }
 
@@ -533,9 +533,9 @@ UPI ID: ${bankDetails.upiVpa}
               {isSubmitted ? (
                 <div className="py-4 text-center space-y-2 text-emerald-600">
                   <CheckCircle2 className="w-10 h-10 mx-auto animate-bounce" />
-                  <span className="text-sm font-black block">Bank Transfer Record Created!</span>
+                  <span className="text-sm font-black block">Bank Transfer Reference Submitted!</span>
                   <p className="text-[11px] text-gray-500">
-                    Your 80G Tax Exemption Receipt has been queued and credited.
+                    Your reference has been recorded and queued for trustee reconciliation against bank records.
                   </p>
                 </div>
               ) : (

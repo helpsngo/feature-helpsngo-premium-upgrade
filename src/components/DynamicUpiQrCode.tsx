@@ -43,6 +43,7 @@ export const DynamicUpiQrCode: React.FC<DynamicUpiQrCodeProps> = ({
   const [isGenerating, setIsGenerating] = useState<boolean>(true);
   const [copiedUpi, setCopiedUpi] = useState<boolean>(false);
   const [utrNumber, setUtrNumber] = useState<string>('');
+  const [utrError, setUtrError] = useState<string | null>(null);
   const [selectedApp, setSelectedApp] = useState<string>('gpay');
   const [showUtrHelper, setShowUtrHelper] = useState<boolean>(false);
   const [secondsRemaining, setSecondsRemaining] = useState<number>(300); // 5-minute dynamic session
@@ -340,16 +341,24 @@ export const DynamicUpiQrCode: React.FC<DynamicUpiQrCodeProps> = ({
 
         <div className="space-y-1.5">
           <label htmlFor="upi-utr-input" className="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-            UPI Transaction Ref / UTR Number (Optional for Instant 80G Reconciliation)
+            UPI Transaction Ref / UTR Number * (From UPI App Receipt)
           </label>
           <div className="relative">
             <input
               type="text"
               id="upi-utr-input"
+              required
               value={utrNumber}
-              onChange={(e) => setUtrNumber(e.target.value.replace(/[^0-9A-Za-z]/g, '').slice(0, 16))}
-              placeholder="e.g. 423819283719 (12-digit UTR)"
-              className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-mono font-bold text-gray-900 dark:text-white placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-orange-500/30"
+              onChange={(e) => {
+                setUtrNumber(e.target.value.replace(/[^0-9A-Za-z]/g, '').slice(0, 16));
+                if (utrError) setUtrError(null);
+              }}
+              placeholder="e.g. 423819283719 (12-digit UPI Ref/UTR)"
+              className={`w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-700/80 border rounded-xl text-xs font-mono font-bold text-gray-900 dark:text-white placeholder-gray-400 focus:outline-hidden focus:ring-2 ${
+                utrError
+                  ? 'border-rose-500 focus:ring-rose-500/30'
+                  : 'border-gray-200 dark:border-gray-600 focus:ring-orange-500/30'
+              }`}
             />
             {utrNumber.length >= 10 && (
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] font-bold uppercase">
@@ -357,6 +366,12 @@ export const DynamicUpiQrCode: React.FC<DynamicUpiQrCodeProps> = ({
               </span>
             )}
           </div>
+          {utrError && (
+            <p className="text-[10px] text-rose-600 font-semibold flex items-center gap-1 mt-1">
+              <AlertCircle className="w-3 h-3 flex-shrink-0" />
+              <span>{utrError}</span>
+            </p>
+          )}
         </div>
 
         {/* Primary Action Button: "I Have Paid via QR" */}
@@ -364,17 +379,24 @@ export const DynamicUpiQrCode: React.FC<DynamicUpiQrCodeProps> = ({
           type="button"
           id="confirm-qr-payment-btn"
           disabled={isProcessing}
-          onClick={() => onPaymentConfirmed(utrNumber)}
+          onClick={() => {
+            const cleanUtr = utrNumber.trim();
+            if (!cleanUtr || cleanUtr.length < 6) {
+              setUtrError('Please enter the 12-digit UTR/Reference number from your UPI app (Google Pay, PhonePe, Paytm) receipt.');
+              return;
+            }
+            onPaymentConfirmed(cleanUtr);
+          }}
           className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-extrabold py-3 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50 cursor-pointer"
         >
           {isProcessing ? (
             <div className="flex items-center gap-2">
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span>Generating Verified 80G Certificate...</span>
+              <span>Recording Bank Transfer Reference...</span>
             </div>
           ) : (
             <>
-              <span>I Have Completed Payment of ₹{(amount ?? 0).toLocaleString('en-IN')}</span>
+              <span>Submit UTR for ₹{(amount ?? 0).toLocaleString('en-IN')} 80G Receipt</span>
               <ArrowRight className="w-4 h-4" />
             </>
           )}

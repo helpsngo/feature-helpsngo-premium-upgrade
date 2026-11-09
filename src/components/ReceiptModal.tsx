@@ -157,10 +157,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 HELPS WELFARE SOCIETY (HELPS NGO)
               </h2>
               <p className="text-[10px] text-gray-500 mt-0.5">
-                Registered under Societies Registration Act XXI of 1860 (Est. 2016) • Chandigarh Reg.
+                Registered under Societies Registration Act XXI of 1860 (Reg No: HR/2021/0285458) • Est. 2016
               </p>
               <p className="text-[10px] text-gray-400 font-mono mt-0.5">
-                80G Reg: CIT(E)/80G/AAATH7892RE20214 • NITI Aayog DARPAN Verified
+                80G Order: CIT(E) CHD/80G/2016-17/4726 • PAN: AAATH7892R • DARPAN: HR/2021/0285458
               </p>
             </div>
 
@@ -171,7 +171,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <div>
                     <span className="font-bold text-emerald-900 block text-xs">Payment & 80G Approved</span>
-                    <span className="text-[10px] text-emerald-700">100% Tax Exemption Verified • {donation.approvedBy || 'Trustee Board'}</span>
+                    <span className="text-[10px] text-emerald-700">50% Statutory Deduction (Sec 80G) • {donation.approvedBy || 'Trustee Board'}</span>
                   </div>
                 </div>
                 <span className="font-mono text-[10px] font-bold text-gray-700">
@@ -197,7 +197,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   <AlertCircle className="w-4 h-4 text-rose-600" />
                   <div>
                     <span className="font-bold text-rose-900 block text-xs">Approval Rejected</span>
-                    <span className="text-[10px] text-rose-700">Contact admin@helpsngo.in</span>
+                    <span className="text-[10px] text-rose-700">Contact info@helpsngo.in</span>
                   </div>
                 </div>
               </div>

@@ -1,4 +1,23 @@
-export type TabType = 'home' | 'projects' | 'donate' | 'profile' | 'volunteer';
+export type TabType = 
+  | 'home' 
+  | 'about' 
+  | 'mission' 
+  | 'team' 
+  | 'projects' 
+  | 'program-detail' 
+  | 'impact' 
+  | 'stories' 
+  | 'donate' 
+  | 'volunteer' 
+  | 'internship' 
+  | 'events' 
+  | 'assistance' 
+  | 'transparency' 
+  | 'contact' 
+  | 'aj-assistant' 
+  | 'privacy-policy' 
+  | 'terms-and-conditions' 
+  | 'profile';
 
 export type UserRole = 
   | 'guest'
@@ -392,7 +411,7 @@ export interface DonationRecord {
   amount: number;
   currency: string;
   category: string;
-  status: 'Completed' | 'Processing';
+  status: 'Completed' | 'Processing' | 'Pending';
   receiptNumber: string;
   isMonthly: boolean;
   paymentMethod: string;
@@ -715,6 +734,8 @@ export interface OrganizationInfo {
     primary: string;
     general: string;
     support: string;
+    compliance?: string;
+    donations?: string;
   };
   website: string;
   mission: string;
@@ -740,4 +761,203 @@ export interface OrganizationInfo {
     website: string;
   };
 }
+
+// ============================================================================
+// AUTHORITATIVE ORGANISATION & IMPACT MANAGEMENT SYSTEM TYPES
+// ============================================================================
+
+export type VerificationStatus = 'verified' | 'provisional' | 'under_review' | 'unpublished_pending_documentation';
+
+export interface AddressDetails {
+  street: string;
+  landmark?: string;
+  city: string;
+  district: string;
+  state: string;
+  pinCode: string;
+  country: string;
+  formatted: string;
+}
+
+export interface RegistrationDocumentRecord {
+  id: string;
+  title: string;
+  issuingAuthority: string;
+  registrationNumber: string;
+  registrationDate: string;
+  expiryDate?: string;
+  governingAct: string;
+  verificationStatus: VerificationStatus;
+  evidenceDocumentUrl?: string;
+  verificationNotes?: string;
+}
+
+export interface TaxRegistrationDocumentRecord {
+  id: string;
+  taxSection: string; // e.g., "Section 12A / 12AA", "Section 80G", "PAN"
+  orderNumber: string;
+  orderDate: string;
+  issuingCommissioner: string;
+  exemptionPercentage: number; // e.g. 50
+  ruleReference: string; // e.g. "Rule 18AB / Form 10BE"
+  verificationStatus: VerificationStatus;
+  documentUrl?: string;
+  isPublished: boolean;
+  publicDisclaimer: string;
+}
+
+export interface GrievanceDetails {
+  nodalOfficerName: string;
+  nodalOfficerDesignation: string;
+  phone: string;
+  email: string;
+  physicalOffice: string;
+  turnaroundDays: number;
+}
+
+export interface AuthoritativeOrganizationProfile {
+  officialName: string;
+  legalName: string;
+  shortName: string;
+  acronymMeaning: string;
+  establishedYear: number;
+  registeredAddress: AddressDetails;
+  operationalAddress: AddressDetails;
+  primaryPhone: string;
+  secondaryPhone?: string;
+  helplinePhone?: string;
+  primaryEmail: string;
+  grievanceEmail: string;
+  supportEmail: string;
+  mission: string;
+  vision: string;
+  description: string;
+  verifiedRegistrations: RegistrationDocumentRecord[];
+  taxRegistrations: TaxRegistrationDocumentRecord[];
+  officialSocialLinks: Record<string, string>;
+  grievanceDetails: GrievanceDetails;
+  lastUpdatedDate: string;
+  isPublished: boolean;
+}
+
+export interface ImpactMetricItem {
+  key: string;
+  label: string;
+  value: number | null; // null if unknown; never show fake 0+
+  unit?: string;
+  displayPrefix?: string;
+  displaySuffix?: string;
+  verificationStatus: VerificationStatus;
+  verificationSource: string;
+  evidenceDocTitle?: string;
+  evidenceDocUrl?: string;
+  lastAuditedDate: string;
+  isPublished: boolean;
+  notes?: string;
+}
+
+export interface ProgrammeAchievement {
+  id: string;
+  programmeName: string;
+  category: 'Education' | 'Healthcare' | 'Hunger Relief' | 'Environment' | 'Women Empowerment' | 'Disaster Relief';
+  reportingPeriod: string;
+  achievementHeadline: string;
+  beneficiaryCount: number | null;
+  metricLabel: string;
+  verifiedLocation: string;
+  verificationStatus: VerificationStatus;
+  evidenceDocumentTitle: string;
+  evidenceDocumentUrl?: string;
+  leadCoordinator: string;
+  lastUpdated: string;
+}
+
+export interface LocationAchievement {
+  id: string;
+  locationName: string;
+  district: string;
+  state: string;
+  primaryIntervention: string;
+  reachSummary: string;
+  verifiedCount?: number;
+  verificationStatus: VerificationStatus;
+  auditReference: string;
+}
+
+export interface CentralImpactData {
+  reportingYear: string;
+  lastUpdatedDate: string;
+  dataVerificationStatus: 'audited' | 'provisional' | 'under_review';
+  auditorSignoff: string;
+  metrics: {
+    totalBeneficiaries: ImpactMetricItem;
+    childrenSupported: ImpactMetricItem;
+    womenSupported: ImpactMetricItem;
+    familiesSupported: ImpactMetricItem;
+    healthCamps: ImpactMetricItem;
+    volunteers: ImpactMetricItem;
+    mealsServed: ImpactMetricItem;
+    treesPlanted: ImpactMetricItem;
+    cleanWaterWells: ImpactMetricItem;
+  };
+  programmeAchievements: ProgrammeAchievement[];
+  locationAchievements: LocationAchievement[];
+}
+
+export interface AnnualReportRecord {
+  id: string;
+  financialYear: string;
+  title: string;
+  filingDate: string;
+  auditorFirm: string;
+  auditOpinion: 'Clean & Unqualified' | 'Qualified' | 'Provisional';
+  totalReceiptsINR: number;
+  totalExpenditureINR: number;
+  programExpenditureINR: number;
+  documentUrl: string;
+  verificationStatus: VerificationStatus;
+}
+
+export interface StatutoryCertificateRecord {
+  id: string;
+  certificateName: string;
+  issuingAuthority: string;
+  registrationNumber: string;
+  validFrom: string;
+  validUntil: string;
+  downloadUrl: string;
+  verificationStatus: VerificationStatus;
+  verificationNote: string;
+}
+
+export interface FinancialTransparencyData {
+  expenditureRatios: {
+    programmePercentage: number; // e.g. 88.4
+    administrativePercentage: number; // e.g. 6.8
+    fundraisingPercentage: number; // e.g. 4.8
+    reportingYear: string;
+    auditedBy: string;
+  };
+  annualReports: AnnualReportRecord[];
+  statutoryCertificates: StatutoryCertificateRecord[];
+  lastUpdatedDate: string;
+  statutoryNotice: string;
+}
+
+export interface VerifiedTeamMember {
+  id: string;
+  name: string;
+  designation: string;
+  category: 'leadership' | 'medical' | 'operations' | 'advisory';
+  biography: string;
+  photographUrl: string;
+  email?: string;
+  phone?: string;
+  location: string;
+  appointmentYear: number;
+  approvalStatus: 'approved' | 'pending_verification' | 'archived';
+  approvedByAdminId?: string;
+  lastVerifiedDate: string;
+}
+
 

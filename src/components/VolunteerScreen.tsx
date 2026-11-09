@@ -205,14 +205,14 @@ export const VolunteerScreen: React.FC<VolunteerScreenProps> = ({
           </div>
 
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-orange-600">
-              Application Approved
+            <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+              Application Submitted • Under Trustee Review
             </span>
-            <h2 className="text-xl font-extrabold text-gray-900 mt-1 tracking-tight">
-              Welcome to the Helps NGO Family!
+            <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mt-1 tracking-tight">
+              Application Successfully Registered
             </h2>
-            <p className="text-xs text-gray-600 mt-1 leading-relaxed max-w-xs mx-auto">
-              Thank you, <strong className="text-gray-900">{name}</strong>. Your field coordinator will connect with you shortly.
+            <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 leading-relaxed max-w-xs mx-auto">
+              Thank you, <strong className="text-gray-900 dark:text-white">{name}</strong>. Under our Child Safeguarding & DPDP policy, the trustee desk verifies all volunteer applications before activating field task assignments.
             </p>
           </div>
 
@@ -221,9 +221,9 @@ export const VolunteerScreen: React.FC<VolunteerScreenProps> = ({
             <div className="flex items-center justify-between border-b border-gray-800 pb-3">
               <div className="flex items-center gap-2">
                 <HeartHandshake className="w-5 h-5 text-orange-500" />
-                <span className="font-extrabold text-xs tracking-wide">Helps NGO Official Pass</span>
+                <span className="font-extrabold text-xs tracking-wide">HELPS NGO Provisional Pass</span>
               </div>
-              <span className="text-[10px] font-bold bg-emerald-600 text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider">Active</span>
+              <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider">Under Review</span>
             </div>
 
             <div className="mt-3.5 space-y-2 text-xs">
